@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShopTrack — Winchester Mobile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f1117; --bg2: #161920; --bg3: #1d2029; --bg4: #252833;
+    --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+    --text: #e8e9ed; --text2: #8b8f9e; --text3: #5a5e6e;
+    --green: #2eca8b; --green-dim: rgba(46,202,139,0.12); --green-glow: rgba(46,202,139,0.25);
+    --amber: #f5a623; --amber-dim: rgba(245,166,35,0.12);
+    --red: #ff5b5b; --red-dim: rgba(255,91,91,0.12);
+    --blue: #5b8aff; --blue-dim: rgba(91,138,255,0.12);
+    --purple: #a78bfa; --purple-dim: rgba(167,139,250,0.12);
+    --radius: 10px; --radius-lg: 14px;
+    font-size: 14px;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; }
+
+  /* ── LOGIN SCREEN ── */
+  .login-screen {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; z-index: 500;
+  }
+  .login-box {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 20px; padding: 40px; width: 380px; max-width: 95vw;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  }
+  .login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+  .login-logo-icon { width: 40px; height: 40px; background: var(--green); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .login-logo-text { font-size: 20px; font-weight: 600; letter-spacing: -0.4px; }
+  .login-logo-sub { font-size: 12px; color: var(--text3); }
+  .login-title { font-size: 22px; font-weight: 600; letter-spacing: -0.4px; margin-bottom: 6px; }
+  .login-sub { font-size: 13px; color: var(--text2); margin-bottom: 28px; }
+  .login-err { background: var(--red-dim); border: 1px solid var(--red); color: var(--red); padding: 10px 14px; border-radius: var(--radius); font-size: 13px; margin-bottom: 16px; display: none; }
+  .login-footer { margin-top: 20px; text-align: center; font-size: 12px; color: var(--text3); }
+
+  /* ── SIDEBAR ── */
+  .sidebar { width: 220px; min-width: 220px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+  .logo { padding: 22px 20px 18px; border-bottom: 1px solid var(--border); }
+  .logo-mark { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .logo-icon { width: 30px; height: 30px; background: var(--green); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .logo-name { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+  .logo-sub { font-size: 11px; color: var(--text3); letter-spacing: 0.3px; }
+  .shop-pick { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .shop-pick-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 7px; }
+  .shop-pick select {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 7px 10px; border-radius: var(--radius);
+    cursor: pointer; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235a5e6e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+  }
+  .shop-pick select:focus { outline: none; border-color: var(--green); }
+  .nav { padding: 10px; flex: 1; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--radius); cursor: pointer; color: var(--text2); font-size: 13.5px; margin-bottom: 2px; transition: all 0.15s; user-select: none; }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: var(--green-dim); color: var(--green); font-weight: 500; }
+  .nav-item.admin-nav { color: var(--purple); }
+  .nav-item.admin-nav:hover { background: var(--purple-dim); color: var(--purple); }
+  .nav-item.admin-nav.active { background: var(--purple-dim); color: var(--purple); }
+  .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+  .nav-divider { height: 1px; background: var(--border); margin: 8px 0; }
+  .sidebar-footer { padding: 14px 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text3); }
+  .status-dot { display: inline-block; width: 6px; height: 6px; background: var(--green); border-radius: 50%; margin-right: 6px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .admin-badge-sidebar { display: inline-block; background: var(--purple-dim); color: var(--purple); font-size: 9px; font-weight: 600; padding: 1px 6px; border-radius: 8px; margin-left: auto; letter-spacing: 0.4px; }
+
+  /* ── MAIN ── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .topbar-title { font-size: 15px; font-weight: 500; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .topbar-shop-badge { background: var(--green-dim); color: var(--green); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+  .topbar-admin-badge { background: var(--purple-dim); color: var(--purple); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; }
+  .topbar-admin-badge:hover { background: rgba(167,139,250,0.2); }
+  .topbar-time { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; }
+  .content { flex: 1; overflow-y: auto; padding: 24px; }
+  .content::-webkit-scrollbar { width: 4px; }
+  .content::-webkit-scrollbar-track { background: transparent; }
+  .content::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+  /* ── CARDS ── */
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 16px; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .card-title { font-size: 13px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* ── METRICS ── */
+  .metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 16px; }
+  .metric { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; position: relative; overflow: hidden; }
+  .metric::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--m-color, var(--green)); }
+  .metric-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
+  .metric-value { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; color: var(--m-color, var(--text)); }
+  .metric-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+  /* ── TABLE ── */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 10.5px; color: var(--text3); text-align: left; padding: 7px 12px; border-bottom: 1px solid var(--border); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  tbody tr { transition: background 0.1s; }
+  tbody tr:hover td { background: var(--bg3); }
+  tbody tr.row-inactive td { opacity: 0.45; }
+  tbody tr.row-inactive td:last-child { opacity: 1; }
+
+  /* ── BADGES ── */
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-green { background: var(--green-dim); color: var(--green); }
+  .badge-amber { background: var(--amber-dim); color: var(--amber); }
+  .badge-red { background: var(--red-dim); color: var(--red); }
+  .badge-blue { background: var(--blue-dim); color: var(--blue); }
+  .badge-purple { background: var(--purple-dim); color: var(--purple); }
+  .badge-ghost { background: var(--bg4); color: var(--text2); }
+
+  /* ── BUTTONS ── */
+  .btn { padding: 7px 14px; border-radius: var(--radius); border: 1px solid var(--border2); background: var(--bg3); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 12.5px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .btn:hover { background: var(--bg4); }
+  .btn-green { background: var(--green); color: #0f1117; border-color: var(--green); font-weight: 600; }
+  .btn-green:hover { background: #25b87a; }
+  .btn-red { background: var(--red-dim); color: var(--red); border-color: var(--red); }
+  .btn-red:hover { background: rgba(255,91,91,0.2); }
+  .btn-purple { background: var(--purple-dim); color: var(--purple); border-color: var(--purple); font-weight: 600; }
+  .btn-purple:hover { background: rgba(167,139,250,0.2); }
+  .btn-amber { background: var(--amber-dim); color: var(--amber); border-color: var(--amber); }
+  .btn-amber:hover { background: rgba(245,166,35,0.2); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── MODAL ── */
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+  .modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius-lg); padding: 26px; width: 420px; max-width: 95vw; box-shadow: 0 20px 60px rgba(0,0,0,0.5); animation: slideUp 0.2s ease; max-height: 90vh; overflow-y: auto; }
+  @keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .modal-title { font-size: 16px; font-weight: 600; letter-spacing: -0.2px; }
+  .modal-close { background: none; border: none; color: var(--text3); font-size: 18px; cursor: pointer; padding: 2px 6px; border-radius: 6px; }
+  .modal-close:hover { background: var(--bg4); color: var(--text); }
+
+  /* ── FORM ── */
+  .fg { margin-bottom: 14px; }
+  .fl { font-size: 11px; color: var(--text2); margin-bottom: 5px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+  .fi { width: 100%; padding: 9px 12px; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; transition: border-color 0.15s; }
+  .fi:focus { outline: none; border-color: var(--green); }
+  .fi::placeholder { color: var(--text3); }
+  .fi-admin:focus { border-color: var(--purple); }
+
+  /* ── CHARTS ── */
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .chart-wrap { position: relative; height: 200px; }
+
+  /* ── TABS ── */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .tab { padding: 6px 14px; border-radius: var(--radius); border: 1px solid transparent; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; color: var(--text2); transition: all 0.15s; }
+  .tab:hover { background: var(--bg3); color: var(--text); }
+  .tab.active { background: var(--green-dim); color: var(--green); border-color: rgba(46,202,139,0.2); font-weight: 500; }
+
+  /* ── FILTER ROW ── */
+  .frow { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .search { padding: 7px 12px; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; width: 200px; }
+  .search:focus { outline: none; border-color: var(--green); }
+  .search::placeholder { color: var(--text3); }
+
+  /* ── STOCK BAR ── */
+  .sbar { height: 3px; background: var(--bg4); border-radius: 2px; margin-top: 6px; width: 70px; overflow: hidden; }
+  .sbar-fill { height: 100%; border-radius: 2px; transition: width 0.4s; }
+
+  /* ── EMPTY / LOADER ── */
+  .empty { text-align: center; padding: 50px 20px; color: var(--text3); font-size: 13px; }
+  .empty-icon { font-size: 32px; margin-bottom: 10px; }
+  .loader { text-align: center; padding: 40px; color: var(--text3); font-size: 13px; }
+  .spinner { width: 20px; height: 20px; border: 2px solid var(--border2); border-top-color: var(--green); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── TOAST ── */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius); padding: 12px 18px; font-size: 13px; z-index: 300; box-shadow: 0 8px 30px rgba(0,0,0,0.4); animation: toastIn 0.2s ease; max-width: 280px; }
+  .toast.success { border-left: 3px solid var(--green); }
+  .toast.error { border-left: 3px solid var(--red); }
+  .toast.info { border-left: 3px solid var(--blue); }
+  @keyframes toastIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ── TX TYPE ── */
+  .tx-sale { color: var(--red); font-weight: 500; font-size: 12px; }
+  .tx-supply { color: var(--green); font-weight: 500; font-size: 12px; }
+  .action-btns { display: flex; gap: 4px; flex-wrap: wrap; }
+  .mono { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text2); }
+
+  /* ── ADMIN PAGE ── */
+  .admin-header { background: linear-gradient(135deg, rgba(167,139,250,0.08), rgba(167,139,250,0.03)); border: 1px solid rgba(167,139,250,0.2); border-radius: var(--radius-lg); padding: 20px 24px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+  .admin-header-left h2 { font-size: 18px; font-weight: 600; color: var(--purple); letter-spacing: -0.3px; }
+  .admin-header-left p { font-size: 13px; color: var(--text3); margin-top: 3px; }
+  .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .admin-section-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .admin-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* ── INACTIVE LABEL ── */
+  .inactive-label { font-size: 10px; background: var(--bg4); color: var(--text3); padding: 1px 7px; border-radius: 8px; margin-left: 6px; }
+
+  @media (max-width: 800px) {
+    .sidebar { display: none; }
+    .metrics { grid-template-columns: 1fr 1fr; }
+    .charts-row { grid-template-columns: 1fr; }
+    .admin-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN SCREEN ── -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">📱</div>
+      <div>
+        <div class="login-logo-text">ShopTrack</div>
+        <div class="login-logo-sub">Winchester Mobile Shops</div>
+      </div>
+    </div>
+    <div class="login-title">Admin Login</div>
+    <div class="login-sub">Enter your credentials to access the admin panel.</div>
+    <div class="login-err" id="loginErr">Incorrect username or password.</div>
+    <div class="fg"><label class="fl">Username</label><input class="fi fi-admin" id="loginUser" placeholder="admin" autocomplete="username"></div>
+    <div class="fg"><label class="fl">Password</label><input class="fi fi-admin" id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+    <button class="btn btn-purple" style="width:100%;padding:11px;font-size:14px;margin-top:4px" onclick="doLogin()">Sign in to Admin Panel</button>
+    <div class="login-footer">Not an admin? <span style="color:var(--green);cursor:pointer" onclick="hideLogin()">Continue as staff →</span></div>
+  </div>
+</div>
+
+<!-- ── APP SHELL ── -->
+<div class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">
+      <div class="logo-icon">📱</div>
+      <div class="logo-name">ShopTrack</div>
+    </div>
+    <div class="logo-sub">Winchester Mobile Shops</div>
+  </div>
+  <div class="shop-pick">
+    <div class="shop-pick-label">Active Shop</div>
+    <select id="shopSelect">
+      <option value="All Shops">All Shops</option>
+      <option value="Winchester Central">Winchester Central</option>
+      <option value="Winchester North">Winchester North</option>
+      <option value="Winchester South">Winchester South</option>
+    </select>
+  </div>
+  <nav class="nav" id="nav">
+    <div class="nav-item active" data-page="dashboard"><span class="nav-icon">◼</span> Dashboard</div>
+    <div class="nav-item" data-page="inventory"><span class="nav-icon">▦</span> Inventory</div>
+    <div class="nav-item" data-page="transactions"><span class="nav-icon">↕</span> Transactions</div>
+    <div class="nav-item" data-page="reports"><span class="nav-icon">▤</span> Reports</div>
+    <div class="nav-divider"></div>
+    <div class="nav-item admin-nav" id="adminNavItem" data-page="admin" style="display:none">
+      <span class="nav-icon">🔐</span> Admin
+      <span class="admin-badge-sidebar">ADMIN</span>
+    </div>
+    <div class="nav-item" id="loginNavItem" data-page="_login" style="color:var(--text3)">
+      <span class="nav-icon">🔑</span> Admin Login
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <span class="status-dot"></span> Live database connected
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="pageTitle">Dashboard</div>
+    <div class="topbar-right">
+      <div class="topbar-time" id="clock"></div>
+      <div class="topbar-admin-badge" id="adminTopBadge" style="display:none" onclick="doLogout()">🔐 Admin — Logout</div>
+      <div class="topbar-shop-badge" id="shopBadge">All Shops</div>
+    </div>
+  </div>
+  <div class="content" id="content">
+    <div class="loader"><div class="spinner"></div>Loading...</div>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+
+<script>
+// ── CONFIG ──
+const SUPABASE_URL = 'https://zljgedlhiingixtopdkq.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_UUTMmj3DvSr6a-dy_lxy1w_qPKC7R-n';
+const SHOPS = ['Winchester Central', 'Winchester North', 'Winchester South'];
+const CATEGORIES = ['Smartphones', 'Accessories', 'Tablets', 'Chargers', 'Cases', 'Audio', 'Cables'];
+
+// ── AUTH STATE ──
+let isAdmin = false;
+let adminUser = null;
+
+// ── SHA-256 for password hashing ──
+async function sha256(msg) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// ── API ──
+const api = {
+  headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
+  async get(path) {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/' + path, { headers: this.headers });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async post(path, body) {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/' + path, { method: 'POST', headers: { ...this.headers, 'Prefer': 'return=representation' }, body: JSON.stringify(body) });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async patch(path, body) {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/' + path, { method: 'PATCH', headers: { ...this.headers, 'Prefer': 'return=representation' }, body: JSON.stringify(body) });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async delete(path) {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/' + path, { method: 'DELETE', headers: this.headers });
+    if (!r.ok) throw new Error(await r.text());
+  }
+};
+
+// ── DB ──
+const db = {
+  async getProducts(includeInactive = false) {
+    const q = includeInactive ? 'products?select=*&order=name.asc' : 'products?select=*&order=name.asc';
+    return api.get(q);
+  },
+  async getStock(shop) {
+    if (shop === 'All Shops') return api.get('stock?select=*');
+    return api.get(`stock?select=*&shop=eq.${encodeURIComponent(shop)}`);
+  },
+  async getTransactions(shop, limit = 200) {
+    let q = `transactions?select=*&order=created_at.desc&limit=${limit}`;
+    if (shop !== 'All Shops') q += `&shop=eq.${encodeURIComponent(shop)}`;
+    return api.get(q);
+  },
+  async addProduct(data) {
+    const [p] = await api.post('products', data);
+    await api.post('stock', SHOPS.map(s => ({ product_id: p.id, shop: s, quantity: 0 })));
+    return p;
+  },
+  async updateProduct(id, data) { return api.patch(`products?id=eq.${id}`, data); },
+  async deleteProduct(id) { return api.delete(`products?id=eq.${id}`); },
+  async setProductActive(id, val) { return api.patch(`products?id=eq.${id}`, { is_active: val }); },
+  async recordTransaction(tx) {
+    await api.post('transactions', tx);
+    const stocks = await api.get(`stock?product_id=eq.${tx.product_id}&shop=eq.${encodeURIComponent(tx.shop)}`);
+    if (stocks.length) {
+      const cur = stocks[0].quantity;
+      const newQty = tx.type === 'sale' ? Math.max(0, cur - tx.quantity) : cur + tx.quantity;
+      await api.patch(`stock?product_id=eq.${tx.product_id}&shop=eq.${encodeURIComponent(tx.shop)}`, { quantity: newQty });
+    }
+  },
+  async setStock(productId, shop, quantity) {
+    return api.patch(`stock?product_id=eq.${productId}&shop=eq.${encodeURIComponent(shop)}`, { quantity });
+  },
+  async deleteTransaction(id) { return api.delete(`transactions?id=eq.${id}`); },
+  async changeAdminPassword(id, hash) { return api.patch(`admin_users?id=eq.${id}`, { password_hash: hash }); }
+};
+
+// ── STATE ──
+let currentPage = 'dashboard';
+let currentShop = 'All Shops';
+let chartInstances = {};
+
+// ── UTILS ──
+const fmt = n => '£' + (n || 0).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+const todayStr = () => new Date().toISOString().split('T')[0];
+const monthStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; };
+const destroyCharts = () => { Object.values(chartInstances).forEach(c => c.destroy()); chartInstances = {}; };
+
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+function stockBadge(qty) {
+  if (qty === 0) return `<span class="badge badge-red">Out of stock</span>`;
+  if (qty < 5) return `<span class="badge badge-amber">Low: ${qty}</span>`;
+  return `<span class="badge badge-green">${qty}</span>`;
+}
+function stockBar(qty) {
+  const pct = Math.min(100, (qty / 50) * 100);
+  const color = qty === 0 ? 'var(--red)' : qty < 5 ? 'var(--amber)' : 'var(--green)';
+  return `<div class="sbar"><div class="sbar-fill" style="width:${pct}%;background:${color}"></div></div>`;
+}
+
+// ── CLOCK ──
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+setInterval(updateClock, 1000); updateClock();
+
+// ── LOGIN ──
+async function doLogin() {
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value;
+  document.getElementById('loginErr').style.display = 'none';
+  if (!username || !password) { document.getElementById('loginErr').textContent = 'Please enter username and password.'; document.getElementById('loginErr').style.display = 'block'; return; }
+  try {
+    const hash = await sha256(password);
+    const rows = await api.get(`admin_users?username=eq.${encodeURIComponent(username)}&password_hash=eq.${hash}&select=*`);
+    if (!rows.length) { document.getElementById('loginErr').textContent = 'Incorrect username or password.'; document.getElementById('loginErr').style.display = 'block'; return; }
+    isAdmin = true;
+    adminUser = rows[0];
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminNavItem').style.display = 'flex';
+    document.getElementById('loginNavItem').style.display = 'none';
+    document.getElementById('adminTopBadge').style.display = 'block';
+    currentPage = 'admin';
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    document.getElementById('adminNavItem').classList.add('active');
+    document.getElementById('pageTitle').textContent = 'Admin Panel';
+    toast(`Welcome, ${adminUser.full_name}!`);
+    render();
+  } catch(e) { document.getElementById('loginErr').textContent = 'Error: ' + e.message; document.getElementById('loginErr').style.display = 'block'; }
+}
+
+function hideLogin() {
+  document.getElementById('loginScreen').style.display = 'none';
+}
+
+function doLogout() {
+  if (!confirm('Log out of Admin panel?')) return;
+  isAdmin = false; adminUser = null;
+  document.getElementById('adminNavItem').style.display = 'none';
+  document.getElementById('loginNavItem').style.display = 'flex';
+  document.getElementById('adminTopBadge').style.display = 'none';
+  currentPage = 'dashboard';
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  document.querySelector('[data-page="dashboard"]').classList.add('active');
+  document.getElementById('pageTitle').textContent = 'Dashboard';
+  toast('Logged out of admin panel', 'info');
+  render();
+}
+
+// Enter key on login
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('loginUser').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+// ── NAV ──
+document.getElementById('nav').addEventListener('click', e => {
+  const item = e.target.closest('.nav-item');
+  if (!item) return;
+  const page = item.dataset.page;
+  if (page === '_login') { document.getElementById('loginScreen').style.display = 'flex'; return; }
+  if (page === 'admin' && !isAdmin) return;
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  item.classList.add('active');
+  currentPage = page;
+  document.getElementById('pageTitle').textContent = { dashboard:'Dashboard', inventory:'Inventory', transactions:'Transactions', reports:'Reports', admin:'Admin Panel' }[page];
+  render();
+});
+
+document.getElementById('shopSelect').addEventListener('change', e => {
+  currentShop = e.target.value;
+  document.getElementById('shopBadge').textContent = currentShop;
+  render();
+});
+
+// ── RENDER ──
+async function render() {
+  destroyCharts();
+  const content = document.getElementById('content');
+  content.innerHTML = `<div class="loader"><div class="spinner"></div>Loading...</div>`;
+  try {
+    if (currentPage === 'dashboard') await renderDashboard(content);
+    else if (currentPage === 'inventory') await renderInventory(content);
+    else if (currentPage === 'transactions') await renderTransactions(content);
+    else if (currentPage === 'reports') await renderReports(content);
+    else if (currentPage === 'admin') { if (isAdmin) await renderAdmin(content); else content.innerHTML = `<div class="empty"><div class="empty-icon">🔒</div>Access denied</div>`; }
+  } catch(e) {
+    content.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>Error loading data.<br><small style="color:var(--text3)">${e.message}</small></div>`;
+  }
+}
+
+// ════════════════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════════════════
+async function renderDashboard(content) {
+  const [products, allStock, transactions] = await Promise.all([
+    db.getProducts(true), db.getStock(currentShop), db.getTransactions(currentShop, 500)
+  ]);
+  const today = todayStr(), month = monthStr();
+  const saleTx = transactions.filter(t => t.type === 'sale');
+  const todaySales = saleTx.filter(t => t.created_at.startsWith(today));
+  const monthSales = saleTx.filter(t => t.created_at.startsWith(month));
+  const todayRev = todaySales.reduce((a,t)=>a+Number(t.total),0);
+  const monthRev = monthSales.reduce((a,t)=>a+Number(t.total),0);
+  const todayUnits = todaySales.reduce((a,t)=>a+t.quantity,0);
+  const monthUnits = monthSales.reduce((a,t)=>a+t.quantity,0);
+  const stockMap = {};
+  allStock.forEach(s => { stockMap[s.product_id] = (stockMap[s.product_id]||0)+s.quantity; });
+  const activeProducts = products.filter(p => p.is_active !== false);
+  const totalStockValue = activeProducts.reduce((a,p)=>a+(stockMap[p.id]||0)*Number(p.price),0);
+  const lowCount = activeProducts.filter(p=>(stockMap[p.id]||0)<5).length;
+  const last7 = Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);return d.toISOString().split('T')[0];});
+  const dailyRevs = last7.map(d=>saleTx.filter(t=>t.created_at.startsWith(d)).reduce((a,t)=>a+Number(t.total),0));
+  const catMap = {}; CATEGORIES.forEach(c=>catMap[c]=0);
+  monthSales.forEach(t=>{const p=products.find(p=>p.id===t.product_id);if(p)catMap[p.category]=(catMap[p.category]||0)+Number(t.total);});
+  const catLabels = CATEGORIES.filter(c=>catMap[c]>0);
+  const catData = catLabels.map(c=>catMap[c]);
+  const topItems = products.map(p=>{const sold=monthSales.filter(t=>t.product_id===p.id).reduce((a,t)=>a+t.quantity,0);return{...p,sold};}).sort((a,b)=>b.sold-a.sold).slice(0,5);
+
+  content.innerHTML = `
+    <div class="metrics">
+      <div class="metric" style="--m-color:var(--green)"><div class="metric-label">Today's Revenue</div><div class="metric-value">${fmt(todayRev)}</div><div class="metric-sub">${todayUnits} units sold today</div></div>
+      <div class="metric" style="--m-color:var(--blue)"><div class="metric-label">Monthly Revenue</div><div class="metric-value">${fmt(monthRev)}</div><div class="metric-sub">${monthUnits} units this month</div></div>
+      <div class="metric" style="--m-color:var(--text2)"><div class="metric-label">Stock Value</div><div class="metric-value">${fmt(totalStockValue)}</div><div class="metric-sub">${activeProducts.length} active products</div></div>
+      <div class="metric" style="--m-color:var(--amber)"><div class="metric-label">Low Stock Alerts</div><div class="metric-value">${lowCount}</div><div class="metric-sub">items need restocking</div></div>
+    </div>
+    <div class="charts-row">
+      <div class="card"><div class="card-header"><div class="card-title">Sales — Last 7 Days</div></div><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
+      <div class="card"><div class="card-header"><div class="card-title">Monthly Sales by Category</div></div><div class="chart-wrap"><canvas id="donutChart"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Top Selling Items This Month</div></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Product</th><th>Category</th><th>Units Sold</th><th>Revenue</th></tr></thead>
+        <tbody>${topItems.map(p=>`<tr><td><strong>${p.name}</strong></td><td><span class="badge badge-blue">${p.category}</span></td><td>${p.sold}</td><td>${fmt(p.sold*Number(p.price))}</td></tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+
+  const barCtx = document.getElementById('barChart').getContext('2d');
+  chartInstances.bar = new Chart(barCtx, { type:'bar', data:{ labels:last7.map(d=>new Date(d+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric'})), datasets:[{data:dailyRevs,backgroundColor:'rgba(46,202,139,0.8)',borderRadius:5,borderSkipped:false}] }, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a5e6e',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a5e6e',font:{size:11},callback:v=>'£'+v.toLocaleString()}}}} });
+  if (catLabels.length) {
+    const donutCtx = document.getElementById('donutChart').getContext('2d');
+    chartInstances.donut = new Chart(donutCtx, { type:'doughnut', data:{labels:catLabels,datasets:[{data:catData,backgroundColor:['#2eca8b','#5b8aff','#f5a623','#ff5b5b','#a78bfa','#f472b6','#34d399'],borderWidth:0,hoverOffset:4}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8b8f9e',font:{size:11,family:'DM Sans'},boxWidth:10,padding:10}}}} });
+  }
+}
+
+// ════════════════════════════════════════════
+// INVENTORY
+// ════════════════════════════════════════════
+async function renderInventory(content) {
+  const [products, allStock] = await Promise.all([db.getProducts(true), db.getStock(currentShop)]);
+  const stockMap = {};
+  allStock.forEach(s => { stockMap[s.product_id] = (stockMap[s.product_id]||0)+s.quantity; });
+
+  content.innerHTML = `
+    <div class="frow">
+      <input class="search" id="invSearch" placeholder="Search products…" />
+      <select class="fi" id="catFilter" style="width:auto">
+        <option value="">All categories</option>
+        ${CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('')}
+      </select>
+      ${isAdmin ? `<select class="fi" id="statusFilter" style="width:auto"><option value="all">All products</option><option value="active">Active only</option><option value="inactive">Inactive only</option></select>` : ''}
+    </div>
+    <div class="card" style="padding:0">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Product</th><th>SKU</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="invBody"></tbody>
+        </table>
+      </div>
+    </div>`;
+
+  function renderRows() {
+    const search = document.getElementById('invSearch').value.toLowerCase();
+    const cat = document.getElementById('catFilter').value;
+    const status = isAdmin && document.getElementById('statusFilter') ? document.getElementById('statusFilter').value : 'all';
+    const rows = products.filter(p =>
+      (!search || p.name.toLowerCase().includes(search) || p.sku.toLowerCase().includes(search)) &&
+      (!cat || p.category === cat) &&
+      (status === 'all' || (status === 'active' && p.is_active !== false) || (status === 'inactive' && p.is_active === false))
+    );
+    const body = document.getElementById('invBody');
+    if (!rows.length) { body.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">📦</div>No products found</div></td></tr>`; return; }
+    const qty_fn = p => stockMap[p.id] || 0;
+    body.innerHTML = rows.map(p => {
+      const qty = qty_fn(p);
+      const active = p.is_active !== false;
+      const adminActions = isAdmin ? `
+        <button class="btn btn-sm ${active?'btn-amber':'btn-green'}" onclick="toggleActive(${p.id},${active})">${active?'Disable':'Enable'}</button>
+        <button class="btn btn-sm" onclick="openEdit(${p.id})">Edit</button>
+        <button class="btn btn-sm btn-red" onclick="deleteProduct(${p.id})">✕</button>` : '';
+      const sellBtn = active ? `<button class="btn btn-sm btn-red" onclick="openSell(${p.id})">▼ Sell</button>` : `<button class="btn btn-sm" disabled title="Product disabled">▼ Sell</button>`;
+      return `<tr class="${!active?'row-inactive':''}">
+        <td><strong>${p.name}</strong>${!active?'<span class="inactive-label">INACTIVE</span>':''}</td>
+        <td><span class="mono">${p.sku}</span></td>
+        <td><span class="badge badge-blue">${p.category}</span></td>
+        <td>${fmt(Number(p.price))}</td>
+        <td>${active?stockBadge(qty):'<span class="badge badge-ghost">—</span>'}${active?stockBar(qty):''}</td>
+        <td>${active?'<span class="badge badge-green">Active</span>':'<span class="badge badge-ghost">Inactive</span>'}</td>
+        <td><div class="action-btns">
+          ${sellBtn}
+          <button class="btn btn-sm btn-green" onclick="openSupply(${p.id})" ${!active?'disabled title="Product disabled"':''}>▲ Supply</button>
+          ${adminActions}
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  renderRows();
+  document.getElementById('invSearch').addEventListener('input', renderRows);
+  document.getElementById('catFilter').addEventListener('change', renderRows);
+  if (isAdmin && document.getElementById('statusFilter')) document.getElementById('statusFilter').addEventListener('change', renderRows);
+  window._invProducts = products; window._stockMap = stockMap;
+}
+
+window.openSell = id => { const p = window._invProducts.find(p=>p.id===id); if(p.is_active===false){toast('This product is disabled','error');return;} showTxModal(p,'sale',currentShop==='All Shops'?'Winchester Central':currentShop); };
+window.openSupply = id => { const p = window._invProducts.find(p=>p.id===id); if(p.is_active===false){toast('This product is disabled','error');return;} showTxModal(p,'supply',currentShop==='All Shops'?'Winchester Central':currentShop); };
+
+window.toggleActive = async (id, currentlyActive) => {
+  if (!isAdmin) return;
+  const action = currentlyActive ? 'disable' : 'enable';
+  if (!confirm(`Are you sure you want to ${action} this product?`)) return;
+  try { await db.setProductActive(id, !currentlyActive); toast(`Product ${action}d`); render(); }
+  catch(e) { toast('Error: '+e.message, 'error'); }
+};
+
+window.openEdit = id => {
+  if (!isAdmin) return;
+  const p = window._invProducts.find(p=>p.id===id);
+  showModal(`
+    <div class="modal-head"><div class="modal-title">Edit Product</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="fg"><label class="fl">Name</label><input class="fi" id="eName" value="${p.name}"></div>
+    <div class="fg"><label class="fl">SKU</label><input class="fi" id="eSku" value="${p.sku}"></div>
+    <div class="fg"><label class="fl">Price (£)</label><input class="fi" id="ePrice" type="number" value="${p.price}"></div>
+    <div class="fg"><label class="fl">Category</label><select class="fi" id="eCat">${CATEGORIES.map(c=>`<option ${c===p.category?'selected':''}>${c}</option>`).join('')}</select></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-green" onclick="saveEdit(${p.id})">Save changes</button>
+    </div>`);
+};
+
+window.saveEdit = async id => {
+  if (!isAdmin) return;
+  try {
+    await db.updateProduct(id, { name:document.getElementById('eName').value, sku:document.getElementById('eSku').value, price:parseFloat(document.getElementById('ePrice').value), category:document.getElementById('eCat').value });
+    closeModal(); toast('Product updated'); render();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+};
+
+window.deleteProduct = async id => {
+  if (!isAdmin) return;
+  if (!confirm('Permanently delete this product? This cannot be undone.')) return;
+  try { await db.deleteProduct(id); toast('Product deleted'); render(); }
+  catch(e) { toast('Error: '+e.message,'error'); }
+};
+
+function showTxModal(p, type, shop) {
+  const isSale = type === 'sale';
+  showModal(`
+    <div class="modal-head"><div class="modal-title">${isSale?'▼ Record Sale':'▲ Record Supply'}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div style="background:var(--bg3);padding:12px;border-radius:var(--radius);margin-bottom:16px;font-size:13px"><strong>${p.name}</strong><span style="color:var(--text2);margin-left:8px">${fmt(Number(p.price))} each</span></div>
+    <div class="fg"><label class="fl">Shop</label><select class="fi" id="txShop">${SHOPS.map(s=>`<option ${s===shop?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="fg"><label class="fl">Quantity</label><input class="fi" id="txQty" type="number" min="1" value="1"></div>
+    <div class="fg"><label class="fl">Note (optional)</label><input class="fi" id="txNote" placeholder="e.g. bulk order, promo…"></div>
+    <div id="txTotal" style="font-size:13px;color:var(--text2);margin-bottom:16px">Total: <strong>${fmt(Number(p.price))}</strong></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn ${isSale?'btn-red':'btn-green'}" onclick="confirmTx(${p.id},'${p.name.replace(/'/g,"\\'")}',${p.price},'${type}')">${isSale?'Confirm Sale':'Confirm Supply'}</button>
+    </div>`);
+  document.getElementById('txQty').addEventListener('input', e => {
+    document.getElementById('txTotal').innerHTML = `Total: <strong>${fmt(Number(p.price)*(parseInt(e.target.value)||0))}</strong>`;
+  });
+}
+
+window.confirmTx = async (productId, productName, price, type) => {
+  const qty = parseInt(document.getElementById('txQty').value)||1;
+  const shop = document.getElementById('txShop').value;
+  const note = document.getElementById('txNote').value;
+  try {
+    await db.recordTransaction({ product_id:productId, product_name:productName, type, shop, quantity:qty, price:Number(price), total:Number(price)*qty, note });
+    closeModal(); toast(type==='sale'?`Sale recorded — ${qty} unit(s)`:`Supply added — ${qty} unit(s)`); render();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+};
+
+// ════════════════════════════════════════════
+// TRANSACTIONS
+// ════════════════════════════════════════════
+async function renderTransactions(content) {
+  const transactions = await db.getTransactions(currentShop, 300);
+  content.innerHTML = `
+    <div class="tabs">
+      <button class="tab active" data-type="all">All</button>
+      <button class="tab" data-type="sale">Sales only</button>
+      <button class="tab" data-type="supply">Supply only</button>
+    </div>
+    <div class="frow">
+      <input class="search" id="txSearch" placeholder="Search product…" />
+      <input type="date" class="fi" id="txFrom" style="width:auto" />
+      <input type="date" class="fi" id="txTo" style="width:auto" />
+    </div>
+    <div class="metrics" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px" id="txMetrics"></div>
+    <div class="card" style="padding:0"><div class="tbl-wrap"><table>
+      <thead><tr><th>Date & Time</th><th>Type</th><th>Product</th><th>Shop</th><th>Qty</th><th>Total</th><th>Note</th>${isAdmin?'<th>Action</th>':''}</tr></thead>
+      <tbody id="txBody"></tbody>
+    </table></div></div>`;
+
+  let activeType = 'all';
+  function renderTx() {
+    const search = document.getElementById('txSearch').value.toLowerCase();
+    const from = document.getElementById('txFrom').value;
+    const to = document.getElementById('txTo').value;
+    const filtered = transactions.filter(t =>
+      (activeType==='all'||t.type===activeType) &&
+      (!search||t.product_name.toLowerCase().includes(search)) &&
+      (!from||t.created_at>=from) &&
+      (!to||t.created_at<=to+'T23:59:59')
+    );
+    const totalRev = filtered.filter(t=>t.type==='sale').reduce((a,t)=>a+Number(t.total),0);
+    const totalSupply = filtered.filter(t=>t.type==='supply').reduce((a,t)=>a+t.quantity,0);
+    document.getElementById('txMetrics').innerHTML = `
+      <div class="metric" style="--m-color:var(--text2)"><div class="metric-label">Transactions</div><div class="metric-value">${filtered.length}</div></div>
+      <div class="metric" style="--m-color:var(--green)"><div class="metric-label">Sales Revenue</div><div class="metric-value">${fmt(totalRev)}</div></div>
+      <div class="metric" style="--m-color:var(--blue)"><div class="metric-label">Units Supplied</div><div class="metric-value">${totalSupply}</div></div>`;
+    const body = document.getElementById('txBody');
+    if (!filtered.length) { body.innerHTML = `<tr><td colspan="${isAdmin?8:7}"><div class="empty"><div class="empty-icon">📋</div>No transactions found</div></td></tr>`; return; }
+    body.innerHTML = filtered.map(t=>`<tr>
+      <td class="mono">${new Date(t.created_at).toLocaleString('en-GB')}</td>
+      <td><span class="${t.type==='sale'?'tx-sale':'tx-supply'}">${t.type==='sale'?'▼ Sale':'▲ Supply'}</span></td>
+      <td>${t.product_name}</td>
+      <td><span class="badge badge-ghost" style="font-size:10px">${t.shop.replace('Winchester ','')}</span></td>
+      <td>${t.quantity}</td>
+      <td><strong>${fmt(Number(t.total))}</strong></td>
+      <td style="color:var(--text3);font-size:12px">${t.note||'—'}</td>
+      ${isAdmin?`<td><button class="btn btn-sm btn-red" onclick="deleteTx(${t.id})">Delete</button></td>`:''}
+    </tr>`).join('');
+  }
+  renderTx();
+  document.getElementById('txSearch').addEventListener('input', renderTx);
+  document.getElementById('txFrom').addEventListener('change', renderTx);
+  document.getElementById('txTo').addEventListener('change', renderTx);
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => { document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); tab.classList.add('active'); activeType=tab.dataset.type; renderTx(); });
+  });
+}
+
+window.deleteTx = async id => {
+  if (!isAdmin) return;
+  if (!confirm('Delete this transaction? The stock level will NOT be automatically reversed.')) return;
+  try { await db.deleteTransaction(id); toast('Transaction deleted','info'); render(); }
+  catch(e) { toast('Error: '+e.message,'error'); }
+};
+
+// ════════════════════════════════════════════
+// REPORTS
+// ════════════════════════════════════════════
+async function renderReports(content) {
+  const transactions = await db.getTransactions('All Shops', 1000);
+  const saleTx = transactions.filter(t=>t.type==='sale');
+  content.innerHTML = `
+    <div class="tabs" id="repTabs">
+      <button class="tab active" data-period="monthly">Monthly (12 months)</button>
+      <button class="tab" data-period="daily">Daily (30 days)</button>
+    </div>
+    <div class="card"><div class="card-header"><div class="card-title" id="repChartTitle">Revenue — Last 12 Months</div></div><div class="chart-wrap" style="height:220px"><canvas id="repLineChart"></canvas></div></div>
+    <div class="charts-row">
+      <div class="card"><div class="card-header"><div class="card-title">Revenue by Shop (all time)</div></div><div class="tbl-wrap"><table>
+        <thead><tr><th>Shop</th><th>Revenue</th><th>Units</th><th>Share</th></tr></thead>
+        <tbody id="shopBreakdown"></tbody>
+      </table></div></div>
+      <div class="card"><div class="card-header"><div class="card-title">Low Stock Alerts</div></div><div id="lowStockContent"></div></div>
+    </div>`;
+
+  const shopRows = SHOPS.map(s=>{ const rev=saleTx.filter(t=>t.shop===s).reduce((a,t)=>a+Number(t.total),0); const units=saleTx.filter(t=>t.shop===s).reduce((a,t)=>a+t.quantity,0); return{shop:s,rev,units}; }).sort((a,b)=>b.rev-a.rev);
+  const totalRev = shopRows.reduce((a,s)=>a+s.rev,0);
+  document.getElementById('shopBreakdown').innerHTML = shopRows.map(s=>`<tr><td>${s.shop.replace('Winchester ','Win. ')}</td><td><strong>${fmt(s.rev)}</strong></td><td>${s.units}</td><td>${totalRev?Math.round(s.rev/totalRev*100)+'%':'—'}</td></tr>`).join('');
+
+  const [products, allStock] = await Promise.all([db.getProducts(true), db.getStock(currentShop)]);
+  const stockMap = {};
+  allStock.forEach(s=>{stockMap[s.product_id]=(stockMap[s.product_id]||0)+s.quantity;});
+  const low = products.filter(p=>p.is_active!==false&&(stockMap[p.id]||0)<5);
+  document.getElementById('lowStockContent').innerHTML = low.length===0
+    ? `<div class="empty" style="padding:20px"><div class="empty-icon">✅</div>All stock levels healthy</div>`
+    : `<div class="tbl-wrap"><table><thead><tr><th>Product</th><th>Stock</th></tr></thead><tbody>${low.map(p=>`<tr><td>${p.name}</td><td>${stockBadge(stockMap[p.id]||0)}</td></tr>`).join('')}</tbody></table></div>`;
+
+  let period = 'monthly';
+  function buildChart() {
+    if (chartInstances.repLine) { chartInstances.repLine.destroy(); delete chartInstances.repLine; }
+    const labels = period==='monthly'
+      ? Array.from({length:12},(_,i)=>{const d=new Date();d.setMonth(d.getMonth()-11+i);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;})
+      : Array.from({length:30},(_,i)=>{const d=new Date();d.setDate(d.getDate()-29+i);return d.toISOString().split('T')[0];});
+    const shopColors={'Winchester Central':'#2eca8b','Winchester North':'#5b8aff','Winchester South':'#f5a623'};
+    const shopsToShow = currentShop==='All Shops'?SHOPS:[currentShop];
+    const datasets = shopsToShow.map(shop=>({ label:shop.replace('Winchester ',''), data:labels.map(l=>saleTx.filter(t=>t.shop===shop&&t.created_at.startsWith(l)).reduce((a,t)=>a+Number(t.total),0)), borderColor:shopColors[shop], backgroundColor:shopColors[shop]+'22', fill:false, tension:0.3, pointRadius:3 }));
+    const fmtLabel = l => period==='monthly'?new Date(l+'-01').toLocaleDateString('en-GB',{month:'short',year:'2-digit'}):new Date(l+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    document.getElementById('repChartTitle').textContent = period==='monthly'?'Revenue — Last 12 Months':'Revenue — Last 30 Days';
+    chartInstances.repLine = new Chart(document.getElementById('repLineChart').getContext('2d'), { type:'line', data:{labels:labels.map(fmtLabel),datasets}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b8f9e',font:{size:11,family:'DM Sans'},boxWidth:10}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a5e6e',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a5e6e',font:{size:11},callback:v=>'£'+v.toLocaleString()}}}} });
+  }
+  buildChart();
+  document.querySelectorAll('#repTabs .tab').forEach(tab=>{
+    tab.addEventListener('click',()=>{document.querySelectorAll('#repTabs .tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');period=tab.dataset.period;buildChart();});
+  });
+}
+
+// ════════════════════════════════════════════
+// ADMIN PANEL
+// ════════════════════════════════════════════
+async function renderAdmin(content) {
+  const [products, allStock] = await Promise.all([db.getProducts(true), db.getStock('All Shops')]);
+  const stockMap = {};
+  allStock.forEach(s => { if (!stockMap[s.product_id]) stockMap[s.product_id] = {}; stockMap[s.product_id][s.shop] = s.quantity; });
+  const activeCount = products.filter(p=>p.is_active!==false).length;
+  const inactiveCount = products.filter(p=>p.is_active===false).length;
+
+  content.innerHTML = `
+    <div class="admin-header">
+      <div class="admin-header-left">
+        <h2>🔐 Admin Panel</h2>
+        <p>Logged in as <strong style="color:var(--text)">${adminUser.full_name}</strong> · Full system access</p>
+      </div>
+      <button class="btn btn-red btn-sm" onclick="doLogout()">Logout</button>
+    </div>
+
+    <!-- PRODUCT MANAGEMENT -->
+    <div class="admin-section-title">Product Management</div>
+    <div class="frow" style="margin-bottom:12px">
+      <input class="search" id="adminSearch" placeholder="Search products…" />
+      <select class="fi" id="adminCatFilter" style="width:auto">
+        <option value="">All categories</option>
+        ${CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('')}
+      </select>
+      <select class="fi" id="adminStatusFilter" style="width:auto">
+        <option value="all">All (${products.length})</option>
+        <option value="active">Active (${activeCount})</option>
+        <option value="inactive">Inactive (${inactiveCount})</option>
+      </select>
+      <button class="btn btn-purple" onclick="openAddProduct()">+ Add New Product</button>
+    </div>
+    <div class="card" style="padding:0;margin-bottom:24px">
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Product</th><th>SKU</th><th>Category</th><th>Price</th><th>Status</th><th>Stock (C/N/S)</th><th>Actions</th></tr></thead>
+        <tbody id="adminProdBody"></tbody>
+      </table></div>
+    </div>
+
+    <!-- STOCK ADJUSTMENT -->
+    <div class="admin-section-title">Direct Stock Adjustment</div>
+    <div class="card" style="margin-bottom:24px">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Set exact stock quantity for any product at any shop. Use this to correct errors or set initial stock.</p>
+      <div class="frow">
+        <select class="fi" id="adjProduct" style="flex:1">
+          <option value="">Select product…</option>
+          ${products.filter(p=>p.is_active!==false).map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}
+        </select>
+        <select class="fi" id="adjShop" style="width:auto">
+          ${SHOPS.map(s=>`<option value="${s}">${s.replace('Winchester ','')}</option>`).join('')}
+        </select>
+        <input class="fi" id="adjQty" type="number" min="0" placeholder="New quantity" style="width:130px">
+        <button class="btn btn-purple" onclick="doStockAdj()">Set Stock</button>
+      </div>
+    </div>
+
+    <!-- CHANGE PASSWORD -->
+    <div class="admin-section-title">Security</div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Change Admin Password</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end">
+        <div><label class="fl">Current Password</label><input class="fi" id="pwCurrent" type="password" placeholder="••••••••"></div>
+        <div><label class="fl">New Password</label><input class="fi" id="pwNew" type="password" placeholder="••••••••"></div>
+        <div><label class="fl">Confirm New</label><input class="fi" id="pwConfirm" type="password" placeholder="••••••••"></div>
+        <button class="btn btn-purple" onclick="changePassword()">Update</button>
+      </div>
+    </div>`;
+
+  // Render product table
+  function renderAdminProducts() {
+    const search = document.getElementById('adminSearch').value.toLowerCase();
+    const cat = document.getElementById('adminCatFilter').value;
+    const status = document.getElementById('adminStatusFilter').value;
+    const rows = products.filter(p =>
+      (!search||p.name.toLowerCase().includes(search)||p.sku.toLowerCase().includes(search)) &&
+      (!cat||p.category===cat) &&
+      (status==='all'||(status==='active'&&p.is_active!==false)||(status==='inactive'&&p.is_active===false))
+    );
+    const body = document.getElementById('adminProdBody');
+    if (!rows.length) { body.innerHTML = `<tr><td colspan="7"><div class="empty" style="padding:20px"><div class="empty-icon">📦</div>No products found</div></td></tr>`; return; }
+    body.innerHTML = rows.map(p => {
+      const active = p.is_active !== false;
+      const sm = stockMap[p.id] || {};
+      const c = sm['Winchester Central']||0, n = sm['Winchester North']||0, s = sm['Winchester South']||0;
+      return `<tr class="${!active?'row-inactive':''}">
+        <td><strong>${p.name}</strong>${!active?'<span class="inactive-label">INACTIVE</span>':''}</td>
+        <td><span class="mono">${p.sku}</span></td>
+        <td><span class="badge badge-blue">${p.category}</span></td>
+        <td>${fmt(Number(p.price))}</td>
+        <td>${active?'<span class="badge badge-green">Active</span>':'<span class="badge badge-ghost">Inactive</span>'}</td>
+        <td><span class="mono" style="font-size:13px">${c} / ${n} / ${s}</span></td>
+        <td><div class="action-btns">
+          <button class="btn btn-sm ${active?'btn-amber':'btn-green'}" onclick="toggleActive(${p.id},${active})">${active?'Disable':'Enable'}</button>
+          <button class="btn btn-sm" onclick="openEdit(${p.id})">Edit</button>
+          <button class="btn btn-sm btn-red" onclick="deleteProduct(${p.id})">Delete</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+  renderAdminProducts();
+  document.getElementById('adminSearch').addEventListener('input', renderAdminProducts);
+  document.getElementById('adminCatFilter').addEventListener('change', renderAdminProducts);
+  document.getElementById('adminStatusFilter').addEventListener('change', renderAdminProducts);
+  window._invProducts = products;
+}
+
+window.openAddProduct = () => {
+  if (!isAdmin) return;
+  showModal(`
+    <div class="modal-head"><div class="modal-title" style="color:var(--purple)">+ Add New Product</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="fg"><label class="fl">Product Name</label><input class="fi" id="aName" placeholder="e.g. iPhone 16 Pro"></div>
+    <div class="fg"><label class="fl">SKU</label><input class="fi" id="aSku" placeholder="e.g. IP16P-001"></div>
+    <div class="fg"><label class="fl">Price (£)</label><input class="fi" id="aPrice" type="number" placeholder="999" min="0"></div>
+    <div class="fg"><label class="fl">Category</label><select class="fi" id="aCat">${CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+    <div class="fg" style="display:flex;align-items:center;gap:10px;background:var(--bg3);padding:12px;border-radius:var(--radius)">
+      <input type="checkbox" id="aActive" checked style="width:16px;height:16px;accent-color:var(--green)">
+      <label for="aActive" style="font-size:13px;cursor:pointer">Make active immediately (visible and sellable in inventory)</label>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-purple" onclick="saveAddProduct()">Add Product</button>
+    </div>`);
+};
+
+window.saveAddProduct = async () => {
+  if (!isAdmin) return;
+  const name = document.getElementById('aName').value.trim();
+  const sku = document.getElementById('aSku').value.trim();
+  const price = parseFloat(document.getElementById('aPrice').value);
+  const category = document.getElementById('aCat').value;
+  const is_active = document.getElementById('aActive').checked;
+  if (!name||!sku||!price) { toast('Please fill in all fields','error'); return; }
+  try {
+    await db.addProduct({ name, sku, price, category, is_active });
+    closeModal(); toast(`"${name}" added successfully`); render();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+};
+
+window.doStockAdj = async () => {
+  if (!isAdmin) return;
+  const productId = parseInt(document.getElementById('adjProduct').value);
+  const shop = document.getElementById('adjShop').value;
+  const qty = parseInt(document.getElementById('adjQty').value);
+  if (!productId||isNaN(qty)||qty<0) { toast('Please select a product and enter a valid quantity','error'); return; }
+  if (!confirm(`Set stock for this product at ${shop} to ${qty} units?`)) return;
+  try {
+    await db.setStock(productId, shop, qty);
+    toast(`Stock updated — ${qty} units at ${shop.replace('Winchester ','')}`); render();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+};
+
+window.changePassword = async () => {
+  if (!isAdmin) return;
+  const current = document.getElementById('pwCurrent').value;
+  const newPw = document.getElementById('pwNew').value;
+  const confirm_ = document.getElementById('pwConfirm').value;
+  if (!current||!newPw||!confirm_) { toast('Please fill all password fields','error'); return; }
+  if (newPw !== confirm_) { toast('New passwords do not match','error'); return; }
+  if (newPw.length < 8) { toast('Password must be at least 8 characters','error'); return; }
+  try {
+    const currentHash = await sha256(current);
+    const rows = await api.get(`admin_users?id=eq.${adminUser.id}&password_hash=eq.${currentHash}&select=id`);
+    if (!rows.length) { toast('Current password is incorrect','error'); return; }
+    const newHash = await sha256(newPw);
+    await db.changeAdminPassword(adminUser.id, newHash);
+    toast('Password changed successfully');
+    document.getElementById('pwCurrent').value=''; document.getElementById('pwNew').value=''; document.getElementById('pwConfirm').value='';
+  } catch(e) { toast('Error: '+e.message,'error'); }
+};
+
+// ── MODAL HELPERS ──
+function showModal(html) {
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg'; bg.id = 'modalBg';
+  bg.innerHTML = `<div class="modal">${html}</div>`;
+  bg.addEventListener('click', e => { if(e.target===bg) closeModal(); });
+  document.body.appendChild(bg);
+}
+window.closeModal = () => { const m=document.getElementById('modalBg'); if(m) m.remove(); };
+
+// ── INIT ──
+render();
+</script>
+</body>
+</html>
